@@ -205,6 +205,11 @@ button:disabled {
   color: var(--danger);
 }
 
+.tag.standby {
+  background: #e6edf7;
+  color: #1d4ed8;
+}
+
 .msg {
   margin: 10px 0;
   padding: 10px 12px;

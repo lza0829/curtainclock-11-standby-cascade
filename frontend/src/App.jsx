@@ -11,7 +11,8 @@ export default function App() {
       <header className="hero">
         <h1 className="brand">幕窗钟</h1>
         <p>
-          批窗就绪后开窗占用算力槽与执行器，关窗释放；冲突写入水位，数字同源可核。
+          批窗就绪后开窗占用算力槽与执行器，关窗释放；主槽冲突时在写锁内按优先级扫候补降级，
+          冲突写入水位，数字同源可核。
         </p>
       </header>
 

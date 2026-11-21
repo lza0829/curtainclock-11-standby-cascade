@@ -32,7 +32,10 @@ export default function Sessions() {
     setErr("");
     try {
       const r = await api.openLease(code);
-      setMsg(`已开窗，租约 ${r.lease_no}；在途租约 ${r.open_leases}`);
+      const tail = r.degraded
+        ? `（主槽冲突，已降级到候补槽 ${r.slot_code}）`
+        : `（主槽 ${r.slot_code}）`;
+      setMsg(`已开窗，租约 ${r.lease_no}${tail}；在途租约 ${r.open_leases}`);
       await load();
     } catch (e) {
       setErr(e.message);
@@ -50,53 +53,60 @@ export default function Sessions() {
           <tr>
             <th>批窗</th>
             <th>时段</th>
-            <th>算力槽 / 执行器</th>
+            <th>主槽 / 执行器</th>
             <th>就绪</th>
             <th>状态</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.code}>
-              <td>
-                <div>{r.title}</div>
-                <small>{r.code}</small>
-              </td>
-              <td>
-                {r.day}
-                <br />
-                {fmtMin(r.start_min)}–{fmtMin(r.end_min)}
-              </td>
-              <td>
-                {r.slot_code}
-                <br />
-                {r.executor_code}
-              </td>
-              <td>
-                {r.readiness?.ready ? (
-                  <span className="tag live">就绪</span>
-                ) : (
-                  <span className="tag bad">
-                    {(r.readiness?.reasons || []).join("；") || "未就绪"}
+          {rows.map((r) => {
+            const rd = r.readiness || {};
+            return (
+              <tr key={r.code}>
+                <td>
+                  <div>{r.title}</div>
+                  <small>{r.code}</small>
+                </td>
+                <td>
+                  {r.day}
+                  <br />
+                  {fmtMin(r.start_min)}–{fmtMin(r.end_min)}
+                </td>
+                <td>
+                  {r.slot_code}
+                  <br />
+                  {r.executor_code}
+                </td>
+                <td>
+                  {rd.ready ? (
+                    <span className="tag live">就绪</span>
+                  ) : rd.degradable ? (
+                    <span className="tag standby">
+                      可降级 · 候补 {rd.standby_free?.join("、")}
+                    </span>
+                  ) : (
+                    <span className="tag bad">
+                      {(rd.reasons || []).join("；") || "未就绪"}
+                    </span>
+                  )}
+                </td>
+                <td>
+                  <span className={`tag ${r.status}`}>
+                    {statusLabel[r.status] || r.status}
                   </span>
-                )}
-              </td>
-              <td>
-                <span className={`tag ${r.status}`}>
-                  {statusLabel[r.status] || r.status}
-                </span>
-              </td>
-              <td>
-                <button
-                  disabled={r.status !== "draft"}
-                  onClick={() => openLease(r.code)}
-                >
-                  开窗占用
-                </button>
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td>
+                  <button
+                    disabled={r.status !== "draft"}
+                    onClick={() => openLease(r.code)}
+                  >
+                    开窗占用
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </section>

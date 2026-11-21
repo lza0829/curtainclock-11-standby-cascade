@@ -42,7 +42,8 @@ export default function Leases() {
           <tr>
             <th>租约号</th>
             <th>批窗</th>
-            <th>资源</th>
+            <th>占用槽</th>
+            <th>执行器</th>
             <th>时段</th>
             <th>状态</th>
             <th></th>
@@ -54,8 +55,12 @@ export default function Leases() {
               <td>{r.lease_no}</td>
               <td>{r.window_code}</td>
               <td>
-                {r.slot_code} / {r.executor_code}
+                {r.slot_code}
+                {r.degraded ? (
+                  <span className="tag standby"> 降级自 {r.main_slot_code}</span>
+                ) : null}
               </td>
+              <td>{r.executor_code}</td>
               <td>
                 {r.day} {fmtMin(r.start_min)}–{fmtMin(r.end_min)}
               </td>

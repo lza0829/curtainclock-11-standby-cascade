@@ -17,20 +17,28 @@ def seed_if_empty() -> None:
         if n > 0:
             return
         # slots 表 = 算力槽；executors 表 = 执行器（库表名兼容底座，界面/题面用语为数仓皮）
+        # 前四行是主槽；后两行是同主题候补槽（is_standby=1），standby_priority 小者优先。
         slots = [
-            ("S-ETL-01", "ETL 主槽 A", 80),
-            ("S-ETL-02", "ETL 主槽 B", 30),
-            ("S-BI-01", "报表槽甲", 40),
-            ("S-BI-02", "报表槽乙", 40),
+            # code, name, subject, capacity, is_standby, standby_priority
+            ("S-ETL-01", "ETL 主槽 A", "ETL", 80, 0, 0),
+            ("S-ETL-02", "ETL 主槽 B", "ETL", 30, 0, 0),
+            ("S-BI-01", "报表槽甲", "BI", 40, 0, 0),
+            ("S-BI-02", "报表槽乙", "BI", 40, 0, 0),
+            ("S-ETL-SB1", "ETL 候补槽 1", "ETL", 60, 1, 10),
+            ("S-ETL-SB2", "ETL 候补槽 2", "ETL", 60, 1, 20),
+            ("S-BI-SB1", "报表候补槽 1", "BI", 30, 1, 10),
         ]
-        for code, name, cap in slots:
+        for code, name, subject, cap, is_sb, prio in slots:
             conn.execute(
-                "INSERT INTO slots(code, name, capacity, active) VALUES(?,?,?,1)",
-                (code, name, cap),
+                "INSERT INTO slots(code, name, subject, capacity, is_standby, standby_priority, active) "
+                "VALUES(?,?,?,?,?,?,1)",
+                (code, name, subject, cap, is_sb, prio),
             )
         executors = [
             ("E-PIPE-01", "管道执行器甲", "ETL"),
             ("E-PIPE-02", "管道执行器乙", "ETL"),
+            ("E-PIPE-03", "管道执行器丙", "ETL"),
+            ("E-PIPE-04", "管道执行器丁", "ETL"),
             ("E-BI-01", "报表执行器甲", "BI"),
             ("E-BI-02", "报表执行器乙", "BI"),
         ]
@@ -60,9 +68,7 @@ def seed_if_empty() -> None:
             "INSERT INTO watermarks(key, value, updated_at) VALUES('conflict_count', 0, ?)",
             (_now(),),
         )
-        conn.execute(
-            "INSERT INTO settings(key, value) VALUES('conflict_mode', 'reject')",
-        )
+        # 本题默认允许候补降级占用，不落 conflict_mode 总开关。
         conn.execute(
             "INSERT INTO settings(key, value) VALUES('fixture_day', ?)",
             (day,),

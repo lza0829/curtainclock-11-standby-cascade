@@ -43,6 +43,8 @@ def list_conflicts():
 
 @router.post("/leases/open")
 def open_lease(body: OpenBody):
+    # open_lease 必须在 transaction()（BEGIN IMMEDIATE 写锁）内执行：
+    # 就绪复检、候补扫描、正式 open 落库同锁同事务，锁外不先读后写。
     try:
         with transaction() as conn:
             result = lease_svc.open_lease(conn, body.window_code)
